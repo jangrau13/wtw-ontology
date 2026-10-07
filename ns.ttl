@@ -1,0 +1,181 @@
+@prefix wtw:  <https://jangrau13.github.io/wtw-ontology/ns.ttl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+
+# The Walk-This-Way vocabulary (ADR 3), published from docs/ns.ttl of the Walk-This-Way repository through the
+# GitHub Pages of the public repository jangrau13/wtw-ontology:
+# the runtime configuration, the adapter settings documents of the example's adapters, the agent
+# register, the type IRIs, the hypermedia output and the runtime's own action types. The shapes at the
+# end validate a runtime configuration, an adapter settings document and an agent register.
+
+<https://jangrau13.github.io/wtw-ontology/ns.ttl> a owl:Ontology ;
+    rdfs:label "Walk-This-Way vocabulary" .
+
+# --- runtime configuration ---
+
+wtw:RuntimeConfiguration a owl:Class ;
+    rdfs:comment "The document a runtime starts from." .
+wtw:adapter a owl:ObjectProperty ; rdfs:domain wtw:RuntimeConfiguration ;
+    rdfs:comment "An adapter the runtime connects to, by IRI; the adapter states its ports, type IRIs and references itself." .
+wtw:alignment a owl:ObjectProperty ; rdfs:domain wtw:RuntimeConfiguration ; rdfs:range wtw:Alignment ;
+    rdfs:comment "An alignment the runtime hands to a state port." .
+wtw:agentRegister a owl:ObjectProperty ; rdfs:domain wtw:RuntimeConfiguration ;
+    rdfs:comment "The agent register document the runtime writes into every state port." .
+wtw:runtime a owl:ObjectProperty ; rdfs:domain wtw:RuntimeConfiguration ;
+    rdfs:comment "The IRI of the runtime." .
+wtw:httpEndpoint a owl:DatatypeProperty ; rdfs:domain wtw:RuntimeConfiguration ; rdfs:range xsd:string ;
+    rdfs:comment "The host and port the runtime's hypermedia output listens on." .
+
+wtw:Alignment a owl:Class ;
+    rdfs:comment "Alignment documents for a single state port." .
+wtw:statePort a owl:ObjectProperty ; rdfs:domain wtw:Alignment ;
+    rdfs:comment "The state port, by adapter IRI, an alignment is for." .
+wtw:document a owl:ObjectProperty ;
+    rdfs:comment "A document of an alignment, or the rule set of a reasoner." .
+
+# --- adapters ---
+
+wtw:AdapterSettings a owl:Class ;
+    rdfs:comment "The adapter settings document an adapter of the example starts with." .
+wtw:grpcEndpoint a owl:DatatypeProperty ; rdfs:range xsd:string ;
+    rdfs:comment "The host and port of an adapter's gRPC server, stated in the document its IRI dereferences to." .
+wtw:serves a owl:ObjectProperty ; rdfs:range wtw:Port ;
+    rdfs:comment "A port an adapter serves." .
+wtw:binds a owl:ObjectProperty ; rdfs:range wtw:Binding ;
+    rdfs:comment "A binding of a type parameter to a type IRI by an adapter." .
+wtw:Binding a owl:Class .
+wtw:typeParameter a owl:ObjectProperty ; rdfs:domain wtw:Binding ; rdfs:range wtw:TypeParameter .
+wtw:typeIri a owl:ObjectProperty ; rdfs:domain wtw:Binding ; rdfs:range wtw:TypeIri .
+wtw:TypeParameter a owl:Class .
+wtw:CHANGE   a wtw:TypeParameter ; rdfs:label "<CHANGE>" .
+wtw:SELECTOR a wtw:TypeParameter ; rdfs:label "<SELECTOR>" .
+wtw:RULES    a wtw:TypeParameter ; rdfs:label "<RULES>" .
+wtw:reads a owl:ObjectProperty ;
+    rdfs:comment "A reference of a reasoner: a sensor, by adapter IRI, whose facts it reads." .
+wtw:governs a owl:ObjectProperty ;
+    rdfs:comment "A reference of a reasoner: an action port, by adapter IRI, whose actions it decides." .
+
+wtw:Port a owl:Class .
+wtw:SensorPort   a wtw:Port .
+wtw:ActionPort   a wtw:Port .
+wtw:ReasonerPort a wtw:Port .
+wtw:StatePort    a wtw:Port .
+
+# adapter settings
+wtw:systemDescription a owl:ObjectProperty ; rdfs:comment "The system description an adapter senses and acts on, typed with its kind." .
+wtw:ThingDescription a owl:Class ; rdfs:comment "A system description that is a W3C WoT Thing Description." .
+wtw:OpenApiDescription a owl:Class ; rdfs:comment "A system description that is an OpenAPI document." .
+wtw:McpServer a owl:Class ; rdfs:comment "A system description that is the endpoint of an MCP server." .
+wtw:BsplProtocol a owl:Class ; rdfs:comment "A system description that is a BSPL protocol." .
+wtw:subjectField a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:comment "The JSON field naming a sensed object's IRI." .
+wtw:pollSeconds a owl:DatatypeProperty ; rdfs:range xsd:decimal ;
+    rdfs:comment "How often a sensor polls when it cannot subscribe, or how often a runtime polls its runtime configuration, alignments and agent register." .
+wtw:role a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:comment "The BSPL role an adapter plays." .
+wtw:roleBinding a owl:ObjectProperty ; rdfs:comment "A BSPL role, its player and its endpoint." .
+wtw:roleName a owl:DatatypeProperty ; rdfs:range xsd:string .
+wtw:player a owl:ObjectProperty ; rdfs:range wtw:Actor .
+wtw:endpoint a owl:DatatypeProperty ; rdfs:range xsd:string .
+wtw:query a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:comment "The Rego rule that lists the allowed actions." .
+
+# --- evaluation (ADR 6) ---
+
+wtw:LlmEndpoint a owl:Class ;
+    rdfs:comment "An OpenAI-compatible endpoint and the LLM an evaluation run uses." .
+wtw:baseUrl a owl:ObjectProperty ; rdfs:domain wtw:LlmEndpoint ;
+    rdfs:comment "The base URL of the OpenAI-compatible API, such as http://localhost:11434/v1." .
+wtw:llm a owl:DatatypeProperty ; rdfs:domain wtw:LlmEndpoint ; rdfs:range xsd:string ;
+    rdfs:comment "The name of the LLM at that endpoint." .
+wtw:apiKeyVariable a owl:DatatypeProperty ; rdfs:domain wtw:LlmEndpoint ; rdfs:range xsd:string ;
+    rdfs:comment "The name of the environment variable that holds the key of the endpoint; the key itself never appears in a document." .
+
+# --- agent register ---
+
+wtw:Actor a owl:Class ;
+    rdfs:comment "An IRI an agent or a human acts as; further facts about it use the shared vocabulary of the alignment." .
+
+# --- type IRIs ---
+
+wtw:TypeIri a owl:Class ;
+    rdfs:comment "A type that binds a type parameter." .
+wtw:N3Patch       a wtw:TypeIri ; rdfs:label "graph state model <CHANGE>" .
+wtw:GraphSelector a wtw:TypeIri ; rdfs:label "graph state model <SELECTOR>" .
+wtw:N3Rules       a wtw:TypeIri ; rdfs:label "<RULES> of N3 rule sets" .
+wtw:BsplRules     a wtw:TypeIri ; rdfs:label "<RULES> of BSPL protocols" .
+wtw:RegoRules     a wtw:TypeIri ; rdfs:label "<RULES> of Rego rule sets" .
+wtw:StateMachineRules a wtw:TypeIri ; rdfs:label "<RULES> of state machine rule sets" .
+
+# --- hypermedia output ---
+
+wtw:HypermediaOutput a owl:Class ;
+    rdfs:comment "What a runtime's hypermedia output or MCP bridge serves; no adapter starts on a system description typed so." .
+wtw:ActionType a owl:Class ; rdfs:comment "A kind of action an action port provides; described by rdfs:label and dct:description." .
+wtw:Input a owl:Class ; rdfs:comment "The input node of a submitted action." .
+wtw:exposesAction a owl:ObjectProperty ; rdfs:comment "Links a resource or an actor to an action on it." .
+wtw:actionType a owl:ObjectProperty ; rdfs:range wtw:ActionType ; rdfs:comment "The action type of an action." .
+wtw:hasInput a owl:ObjectProperty ; rdfs:range sh:NodeShape ; rdfs:comment "The input shape of an action." .
+wtw:input a owl:ObjectProperty ; rdfs:comment "The pre-filled input of an action." .
+
+wtw:focus a wtw:ActionType ;
+    rdfs:label "focus" ;
+    dct:description "See the current properties of this resource" .
+wtw:unfocus a wtw:ActionType ;
+    rdfs:label "unfocus" ;
+    dct:description "Stop seeing the current properties of this resource" .
+wtw:wait a wtw:ActionType ;
+    rdfs:label "wait" ;
+    dct:description "Wait until your actions or the properties you see change" .
+
+# --- shapes ---
+
+wtw:RuntimeConfigurationShape a sh:NodeShape ;
+    sh:targetClass wtw:RuntimeConfiguration ;
+    sh:property [ sh:path wtw:runtime ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ;
+                  sh:pattern "^(https://|http://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?(/|$))" ;
+                  sh:message "the runtime mints its IRIs under an https IRI, or an http IRI on localhost or 127.0.0.1 (ADR 3)" ] ,
+                [ sh:path wtw:httpEndpoint ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path wtw:pollSeconds ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minExclusive 0 ] ,
+                [ sh:path wtw:adapter ; sh:minCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:alignment ; sh:node wtw:AlignmentShape ] ,
+                [ sh:path wtw:agentRegister ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] .
+
+wtw:AlignmentShape a sh:NodeShape ;
+    sh:property [ sh:path wtw:statePort ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:document ; sh:minCount 1 ; sh:nodeKind sh:IRI ] .
+
+wtw:AdapterSettingsShape a sh:NodeShape ;
+    sh:targetClass wtw:AdapterSettings ;
+    sh:property [ sh:path wtw:grpcEndpoint ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path wtw:systemDescription ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:document ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:serves ; sh:minCount 1 ; sh:in ( wtw:SensorPort wtw:ActionPort wtw:ReasonerPort wtw:StatePort ) ] ,
+                [ sh:path wtw:binds ; sh:node wtw:BindingShape ] ,
+                [ sh:path dct:conformsTo ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:reads ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:governs ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:pollSeconds ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minExclusive 0 ] ,
+                [ sh:path wtw:subjectField ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path wtw:role ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path wtw:roleBinding ; sh:node wtw:RoleBindingShape ] ,
+                [ sh:path wtw:query ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+wtw:RoleBindingShape a sh:NodeShape ;
+    sh:property [ sh:path wtw:roleName ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path wtw:player ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:endpoint ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+wtw:BindingShape a sh:NodeShape ;
+    sh:property [ sh:path wtw:typeParameter ; sh:minCount 1 ; sh:maxCount 1 ; sh:class wtw:TypeParameter ] ,
+                [ sh:path wtw:typeIri ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] .
+
+wtw:LlmEndpointShape a sh:NodeShape ;
+    sh:targetClass wtw:LlmEndpoint ;
+    sh:property [ sh:path wtw:baseUrl ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path wtw:llm ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path wtw:apiKeyVariable ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+wtw:ActorShape a sh:NodeShape ;
+    sh:targetClass wtw:Actor ;
+    sh:nodeKind sh:IRI .
